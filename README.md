@@ -1,10 +1,61 @@
-# Segmentacion de Clientes mediante K-means y modelo de Árbol de Decisión para clasificación
+📊 Segmentación de Clientes con K-Means y Árbol de Decisión
+🧾 Descripción del Proyecto
+Una empresa de retail online ubicada en el Reino Unido desea segmentar a sus clientes para definir estrategias de marketing más efectivas. Para ello, se dispone de una base de datos que contiene todas las transacciones realizadas entre el 1 de diciembre de 2010 y el 9 de diciembre de 2011.
 
-Una empresa de retail online, ubicada en Reino Unido, desea segmentar a sus clientes para obtener datos importantes para el desarrollo de una estrategia de marketing. Para ello, dispone de la base de datos con todas las transacciones realizadas entre el 01/12/2010 y 09/12/20211. La base de datos contiene información como códigos de clientes, números de transacción, precios y cantidades vendidas y la fecha de transacción. Dicha base de datos puede obtenerse de [aquí](https://archive.ics.uci.edu/dataset/352/online+retail). 
+La base de datos incluye:
 
+Código de cliente (CustomerID)
 
-Para realizar la segmentación, se utilizará el análisis RFM (Recency, Frequency, Monetary) de cada uno de los clientes. Luego, se determinará el número de grupos de clientes y la asignación de cada cliente en dichos grupos mediante un análisis cluster de k-means. Como siguiente paso, se va a generar un árbol de decisión para clasificar fácilmente futuros clientes de la empresa. Finalmente, se creará un dashboard con los resultados obtenidos y entender las características de cada segmento y demás información adicional que aportará a la toma de decisión de las estrategias de marketing deseadas. 
+Número de factura (InvoiceNo)
 
+Cantidades y precios de productos
 
+Fechas de transacción
 
-Por supuesto, como primer paso, se realizará la limpieza de los datos ya que se han detectado valores nulos o vacíos, facturas con devoluciones y errores en ciertos formatos de datos. La limpieza de los datos se realizó mediante el uso del software MySQL, el análisis cluster y generación del árbol de decisión se realizaron mediante el software R. Finalmente, el dashboard se generó en Tableau. 
+Información del país
+
+Puedes obtener la base de datos original desde este repositorio de UCI Machine Learning.
+
+🔍 Objetivos y Metodología
+La segmentación se realiza mediante los siguientes pasos:
+
+1. Limpieza de Datos
+Eliminación de valores nulos, vacíos o inválidos
+
+Filtrado de facturas con devoluciones y errores en el formato
+
+Conversión de fechas y normalización de datos
+
+📌 Esta etapa se realizó en MySQL para asegurar una base sólida antes del análisis.
+
+2. Análisis RFM (Recency, Frequency, Monetary)
+Recency: Días desde la última compra del cliente
+
+Frequency: Número total de compras realizadas
+
+Monetary: Valor total gastado por el cliente
+
+📊 Se usó este análisis para representar el comportamiento de compra de los clientes.
+
+3. Segmentación con K-Means
+Escalamiento de las variables RFM
+
+Determinación del número óptimo de clusters (método del codo y silueta)
+
+Asignación de cada cliente a un cluster
+
+4. Clasificación con Árbol de Decisión
+Entrenamiento de un modelo con los datos etiquetados por el clustering
+
+Creación de un árbol de decisión para clasificar nuevos clientes automáticamente
+
+5. Visualización en Dashboard
+Se desarrolló un dashboard interactivo en Tableau
+
+Se visualizaron los segmentos y sus características para facilitar la toma de decisiones de marketing
+
+🛠️ Tecnologías Utilizadas
+Herramienta	Propósito
+MySQL	Limpieza y transformación de datos
+R	Análisis RFM, clustering, modelos
+Tableau	Visualización y dashboard final
