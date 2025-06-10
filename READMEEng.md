@@ -58,16 +58,3 @@ The segmentation process includes the following steps:
 
 ---
 
-## 📁 Repository Structure
-
-```
-├── sql/
-│   └── data_cleaning_retail.sql
-├── r/
-│   └── customer_segmentation_kmeans_tree.R
-├── tableau/
-│   └── segmentation_dashboard.twbx
-├── data/
-│   └── retail_clean.csv
-├── README.md
-```
