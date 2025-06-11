@@ -1,10 +1,10 @@
-################################################################################
-## PROYECTO DE SEGMENTACIÓN DE CLIENTES MEDIANTE USO DE K-MEANS Y DECISION TREES
-################################################################################
+## ====================================================
+## PROYECTO DE SEGMENTACIÓN DE CLIENTES MEDIANTE K-MEANS Y ÁRBOLES DE DECISIÓN
+## ====================================================
 
-#===============================#
-# CARGA DE LIBRERÍAS
-#===============================#
+## ------------------------
+## Carga de Librerías
+## ------------------------
 library(tidyverse)
 library(lubridate)
 library(cluster)
@@ -17,114 +17,120 @@ library(caret)
 library(dplyr)
 library(openxlsx)
 
-#===============================#
-# CARGA DE BASE DE DATOS
-#===============================#
-datos <- read.xlsx("C:/ruta/a/tu/archivo/Retail_clean.xlsx")  # Actualiza la ruta del archivo
+## ------------------------
+## Carga de base de datos
+## ------------------------
+datos <- read.xlsx("C:/..../Retail_clean.xlsx")
 
-#===============================#
-# LIMPIEZA Y FORMATO DE DATOS
-#===============================#
+## ------------------------
+## Preprocesamiento de datos
+## ------------------------
 datos_clean <- datos %>%
   mutate(InvoiceDate = as.Date(as.numeric(InvoiceDate), origin = "1899-12-30"))
 
-#===============================#
-# CÁLCULO DE MÉTRICAS RFM
-#===============================#
-# Fecha de análisis (última fecha disponible + 1)
-ref_fecha <- max(datos_clean$InvoiceDate, na.rm = TRUE) + 1
+## ------------------------
+## Cálculo de métricas RFM
+## ------------------------
+ref_fecha <- max(datos_clean$InvoiceDate, na.rm = TRUE) + 1  # Fecha de referencia
 
-# Cálculo de Recency, Frequency y Monetary por cliente
 rfm_data <- datos_clean %>%
   group_by(CustomerID) %>%
   summarise(
-    Recency   = as.numeric(ref_fecha - max(InvoiceDate)),          # Días desde última compra
-    Frequency = n_distinct(InvoiceNo),                             # Nº de compras únicas
-    Monetary  = sum(Quantity * UnitPrice)                          # Valor total comprado
+    Recency   = as.numeric(ref_fecha - max(InvoiceDate)),
+    Frequency = n_distinct(InvoiceNo),
+    Monetary  = sum(Quantity * UnitPrice),
+    .groups = "drop"
   )
 
-#===============================#
-# ESCALAMIENTO DE MÉTRICAS RFM
-#===============================#
-rfm_scaled <- scale(rfm_data[, 2:4])  # Excluye CustomerID
+## ------------------------
+## Escalado de métricas RFM (sin CustomerID)
+## ------------------------
+rfm_scaled <- scale(rfm_data[, 2:4])
 
-#===============================#
-# DETERMINACIÓN DEL Nº ÓPTIMO DE CLUSTERS
-#===============================#
-# Método del codo
+## ------------------------
+## Determinar número óptimo de clusters
+## ------------------------
 fviz_nbclust(rfm_scaled, kmeans, method = "wss") +
   labs(title = "Número óptimo de Clusters (Método del Codo)")
 
-# Método Silhouette
 fviz_nbclust(rfm_scaled, kmeans, method = "silhouette") +
   labs(title = "Número óptimo de Clusters (Método Silhouette)")
 
-# Basado en los gráficos, asumimos que el número óptimo de clusters es 4
+## Número óptimo elegido: 4
 k_optimo <- 4
 
-#===============================#
-# K-MEANS CLUSTERING
-#===============================#
+## ------------------------
+## K-means clustering
+## ------------------------
 set.seed(123)
 km <- kmeans(rfm_scaled, centers = k_optimo, nstart = 25)
-
-# Asignar el cluster a cada cliente
 rfm_data$Segment <- as.factor(km$cluster)
 
-#===============================#
-# ÁRBOL DE DECISIÓN PARA INTERPRETACIÓN DE CLUSTERS
-#===============================#
-# División del conjunto en entrenamiento (70%) y prueba (30%)
-set.seed(123)
-train_index <- createDataPartition(rfm_data$Segment, p = 0.7, list = FALSE)
-train_data <- rfm_data[train_index, ]
-test_data  <- rfm_data[-train_index, ]
-
-# Entrenamiento del árbol de decisión
-tree_model <- rpart(Segment ~ Recency + Frequency + Monetary,
-                    data = train_data,
-                    method = "class")
-
-# Visualización del árbol
-rpart.plot(tree_model, type = 2, extra = 104, fallen.leaves = TRUE)
-
-# Predicción sobre datos de prueba
-preds <- predict(tree_model, test_data, type = "class")
-
-# Evaluación mediante matriz de confusión
-confusionMatrix(preds, test_data$Segment)
-
-#===============================#
-# VISUALIZACIÓN DE CLUSTERS
-#===============================#
-fviz_cluster(km, data = rfm_scaled,
-             geom = "point",
-             ellipse.type = "convex",
-             labelsize = 8)
-
-#===============================#
-# RESUMEN ESTADÍSTICO POR SEGMENTO
-#===============================#
+## ------------------------
+## Estadísticas descriptivas por clúster
+## ------------------------
 rfm_summary_stats <- rfm_data %>%
   group_by(Segment) %>%
   summarise(
     Count         = n(),
     Avg_Recency   = mean(Recency),
     Avg_Frequency = mean(Frequency),
-    Avg_Monetary  = mean(Monetary)
+    Avg_Monetary  = mean(Monetary),
+    .groups = "drop"
   ) %>%
   arrange(Segment)
 
 print(rfm_summary_stats)
 
-#===============================#
-# EXPORTACIÓN DE RESULTADOS
-#===============================#
-# Integrar segmentación a los datos originales
-df_segmented <- datos_clean %>%
-  left_join(select(rfm_data, CustomerID, Segment), by = "CustomerID")
+## ------------------------
+## Renombrar segmentos con etiquetas descriptivas
+## ------------------------
+segment_names <- c("Clientes Inactivos", 
+                   "Clientes Oro", 
+                   "Clientes Diamante", 
+                   "Clientes Prometedores")
 
-# Guardar en archivos Excel para uso posterior
-write.xlsx(df_segmented, file = "C:/ruta/de/salida/df_segmented.xlsx")
-write.xlsx(rfm_data,    file = "C:/ruta/de/salida/rfm_data.xlsx")
+# Asignar etiquetas a los clusters (verificar que las posiciones coincidan con los perfiles reales)
+km_named <- km
+km_named$cluster <- factor(km$cluster, levels = 1:4, labels = segment_names)
+
+## ------------------------
+## Visualización 2D de los clusters
+## ------------------------
+fviz_cluster(km_named, 
+             data = rfm_scaled, 
+             geom = "point", 
+             ellipse.type = "convex", 
+             labelsize = 8,
+             main = "Segmentación de Clientes por Análisis RFM")
+
+## ------------------------
+## Agregar segmentos a la base original
+## ------------------------
+df_segmented <- datos_clean %>%
+  left_join(dplyr::select(rfm_data, CustomerID, Segment), by = "CustomerID")
+
+## ------------------------
+## Árbol de decisión para clasificación
+## ------------------------
+set.seed(123)
+train_index <- createDataPartition(rfm_data$Segment, p = 0.7, list = FALSE)
+train_data  <- rfm_data[train_index, ]
+test_data   <- rfm_data[-train_index, ]
+
+tree_model <- rpart(Segment ~ Recency + Frequency + Monetary, data = train_data, method = "class")
+
+# Visualización del árbol
+rpart.plot(tree_model, type = 2, extra = 104, fallen.leaves = TRUE)
+
+# Predicción y evaluación
+preds <- predict(tree_model, test_data, type = "class")
+confusionMatrix(preds, test_data$Segment)
+
+## ------------------------
+## Exportar resultados a Excel
+## ------------------------
+write.xlsx(df_segmented, file = "C:/....../df_segmented.xlsx")
+write.xlsx(rfm_data,    file = "C:/....../rfm_data.xlsx")
+
 
