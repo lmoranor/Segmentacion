@@ -90,7 +90,7 @@ segment_names <- c("Clientes Inactivos",
                    "Clientes Diamante", 
                    "Clientes Prometedores")
 
-# Asignar etiquetas a los clusters (verificar que las posiciones coincidan con los perfiles reales)
+# Asignar etiquetas a los clusters
 km_named <- km
 km_named$cluster <- factor(km$cluster, levels = 1:4, labels = segment_names)
 
